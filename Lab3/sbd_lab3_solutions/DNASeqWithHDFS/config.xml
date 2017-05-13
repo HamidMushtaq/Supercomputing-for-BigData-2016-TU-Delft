@@ -1,0 +1,9 @@
+<configuration>
+	<refFolder>/home/hamidmushtaq/bulk/ref</refFolder>
+	<toolsFolder>/home/hamidmushtaq/bulk/tools</toolsFolder>
+	<tmpFolder>/tmp/spark</tmpFolder>
+	<inputFolder>asn/input</inputFolder>
+	<outputFolder>asn/compare</outputFolder> 
+	<numInstances>8</numInstances>
+	<numThreads>8</numThreads>
+</configuration>
