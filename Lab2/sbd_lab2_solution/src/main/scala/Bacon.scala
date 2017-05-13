@@ -44,7 +44,7 @@ object Bacon
 				val s = x.indexOf('(')
 				val e = x.indexOf(')')
 				val ss = x.slice(s+1, e)
-				ss.slice(0,4).toInt >= 2014 // Hamid
+				ss.slice(0,4).toInt >= 2011 // All movies in this decade (2011 and onwards, that is).
 			} 
 			catch {
 				case e: Exception => false
