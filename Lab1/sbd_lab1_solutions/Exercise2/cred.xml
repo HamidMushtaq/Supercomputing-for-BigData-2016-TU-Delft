@@ -1,0 +1,7 @@
+<credentials>
+	<!-- Please fill in your credentials below (replace all the ... with your credentials) -->
+	<consumerKey>...</consumerKey>
+	<consumerSecret>...</consumerSecret>
+	<accessToken>...</accessToken>
+	<accessTokenSecret>...</accessTokenSecret>
+</credentials>

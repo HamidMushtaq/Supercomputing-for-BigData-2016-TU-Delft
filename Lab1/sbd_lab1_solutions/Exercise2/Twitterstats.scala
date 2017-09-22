@@ -1,4 +1,5 @@
 /* Author: Hamid Mushtaq (TU Delft) */
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark._
 import org.apache.spark.SparkContext._
 import org.apache.spark.streaming._
@@ -6,9 +7,17 @@ import org.apache.spark.streaming.twitter._
 import org.apache.spark.streaming.StreamingContext._
 import java.io._
 import java.util.Locale
+import java.text._
+import java.net._
+import java.util.Calendar
 import org.apache.tika.language.LanguageIdentifier
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.parsers.DocumentBuilder
+import org.w3c.dom.Document
+
+//https://github.com/apache/bahir/blob/master/streaming-twitter/examples/src/main/scala/org/apache/spark/examples/streaming/twitter/TwitterPopularTags.scala
 
 object Twitterstats
 { 
@@ -31,8 +40,7 @@ object Twitterstats
 		println("\n-----------------------------------\n")
 	}
 	
-	//(lang, (totalCount, (id, text, max_count, min_count)))
-	def write2Log(tweets: Array[(String, ((Long), (Long, String, Long, Long)))])
+	def write2Log(tweets: Array[(String, ((Int), (Long, String, Int, Int)))])
 	{
 		if (firstTime)
 		{
@@ -120,15 +128,31 @@ object Twitterstats
   
 	def main(args: Array[String]) 
 	{
+		val file = new File("cred.xml")
+		val documentBuilderFactory = DocumentBuilderFactory.newInstance
+		val documentBuilder = documentBuilderFactory.newDocumentBuilder
+		val document = documentBuilder.parse(file);
+			
 		// Configure Twitter credentials
-		// For privacy purposes, keys are removed and replaced with ... in this solution. So, enter your own!
-		val apiKey = "..."
-		val apiSecret = "..."
-		val accessToken = "..."
-		val accessTokenSecret = "..."
-		Helper.configureTwitterCredentials(apiKey, apiSecret, accessToken, accessTokenSecret)
+		val consumerKey = document.getElementsByTagName("consumerKey").item(0).getTextContent 				
+		val consumerSecret = document.getElementsByTagName("consumerSecret").item(0).getTextContent 		
+		val accessToken = document.getElementsByTagName("accessToken").item(0).getTextContent 				
+		val accessTokenSecret = document.getElementsByTagName("accessTokenSecret").item(0).getTextContent	
+		
+		Logger.getLogger("org").setLevel(Level.OFF)
+		Logger.getLogger("akka").setLevel(Level.OFF)
+		Logger.getRootLogger.setLevel(Level.OFF)
 
-		val ssc = new StreamingContext(new SparkConf(), Seconds(1))
+		// Set the system properties so that Twitter4j library used by twitter stream
+		// can use them to generate OAuth credentials
+		System.setProperty("twitter4j.oauth.consumerKey", consumerKey)
+		System.setProperty("twitter4j.oauth.consumerSecret", consumerSecret)
+		System.setProperty("twitter4j.oauth.accessToken", accessToken)
+		System.setProperty("twitter4j.oauth.accessTokenSecret", accessTokenSecret)
+
+		val sparkConf = new SparkConf().setAppName("TwitterPopularTags")
+
+		val ssc = new StreamingContext(sparkConf, Seconds(1))
 		val tweets = TwitterUtils.createStream(ssc, None)
 		val retweetedStatuses = tweets.filter(status => status.isRetweet)// && getLang(status.getText) == "en")
 		//////////////////////////////////////////////////////////////////////////
@@ -139,17 +163,15 @@ object Twitterstats
 			status.getText)))
 		val statusesSorted = statuses.transform(rdd => rdd.sortByKey())
 	 
-		val counts = statusesSorted.reduceByKeyAndWindow((a:(Long, Long, String, String), b:(Long, Long, String, String)) => 
+		val counts = statusesSorted.reduceByKeyAndWindow((a:(Int, Int, String, String), b:(Int, Int, String, String)) => 
 			(math.max(a._2, b._2), math.min(a._2, b._2), a._3, a._4), Seconds(60), Seconds(5))
 		// (lang, (id, text, max_count, min_count))
 		val ds = counts.map{case(id, (max_count, min_count, lang, text)) => (lang, (id, text, max_count, min_count))}
 		ds.foreachRDD(rdd => rdd.cache())
 		// (lang, totalCount)
 		val x1 = ds.map(x => (x._1, (if (x._2._3 == x._2._4) 1 else (x._2._3 - x._2._4)))).transform(rdd => rdd.reduceByKey(_ + _))
-		// (lang, (id, text, max_count, min_count))
-		val x2 = ds.transform(rdd => rdd.sortBy(x => x._2._3 - x._2._4, false))
 		// (lang, (totalCount, (id, text, max_count, min_count)))
-		val y = x1.join(x2).transform(rdd => rdd.sortBy(_._2._1, false))
+		val y = x1.join(ds).transform(rdd => rdd.sortBy(x => (x._2._1, x._2._2._3 - x._2._2._4), false))
 		//////////////////////////////////////////////////////////////////////////				 
 		y.foreachRDD(rdd => write2Log(rdd.collect))
 	
