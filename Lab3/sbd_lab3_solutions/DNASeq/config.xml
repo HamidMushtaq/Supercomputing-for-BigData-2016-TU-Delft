@@ -1,9 +1,9 @@
 <configuration>
-	<refFolder>/home/hamidmushtaq/bulk/ref</refFolder>
-	<toolsFolder>/home/hamidmushtaq/bulk/tools</toolsFolder>
-	<tmpFolder>/tmp/spark</tmpFolder>
-	<inputFolder>/home/hamidmushtaq/bulk/input</inputFolder>
-	<outputFolder>/home/hamidmushtaq/bulk/output</outputFolder> 
+	<refFolder>/data/spark/ref</refFolder>
+	<toolsFolder>/data/spark/tools</toolsFolder>
+	<tmpFolder>/data/username/tmp</tmpFolder>
+	<inputFolder>/data/assign3/input8_bas</inputFolder>
+	<outputFolder>output</outputFolder> 
 	<numInstances>8</numInstances>
-	<numThreads>8</numThreads>
+	<numThreads>1</numThreads>
 </configuration>
