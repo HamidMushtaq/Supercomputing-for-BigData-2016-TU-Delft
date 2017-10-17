@@ -101,6 +101,20 @@ object Bacon
 		val inputFileM = args(1)
 		val inputFileF = args(2)
 		
+		println(inputFileM)
+		println(inputFileF)
+		
+		if (!(new File(inputFileM).exists))
+		{
+			println("The file for male actors: " + inputFileM + ", does not exist!")
+			System.exit(1)
+		}
+		if (!(new File(inputFileF).exists))
+		{
+			println("The file for female actors: " + inputFileF + ", does not exist!")
+			System.exit(1)
+		}
+		
 		val conf = new SparkConf().setAppName("Kevin Bacon app")
 		conf.setMaster("local[" + cores + "]")
 		conf.set("spark.cores.max", cores)
